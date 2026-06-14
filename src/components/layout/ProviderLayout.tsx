@@ -8,6 +8,7 @@ import {
   Building2,
   LogOut,
   ChevronRight,
+  Calendar,
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,7 @@ interface ProviderLayoutProps {
 const menuItems = [
   { path: '/provider', label: '数据概览', icon: <LayoutDashboard className="w-5 h-5" /> },
   { path: '/provider/products', label: '产品管理', icon: <Package className="w-5 h-5" /> },
+  { path: '/provider/appointments', label: '预约管理', icon: <Calendar className="w-5 h-5" /> },
   { path: '/provider/cases', label: '案例管理', icon: <FileText className="w-5 h-5" /> },
   { path: '/provider/inquiries', label: '咨询管理', icon: <MessageCircle className="w-5 h-5" /> },
   { path: '/provider/settings', label: '企业设置', icon: <Settings className="w-5 h-5" /> },

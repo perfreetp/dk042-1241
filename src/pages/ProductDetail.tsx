@@ -9,7 +9,7 @@ import Footer from '@/components/layout/Footer';
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getProductById, isFavorite, addFavorite, removeFavorite, addToCompare, removeFromCompare, isInCompare, compareList, addAppointment } = useAppStore();
+  const { getProductById, isFavorite, addFavorite, removeFavorite, addToCompare, removeFromCompare, isInCompare, compareList, addAppointment, getProductReviews, getProductRating } = useAppStore();
   const product = getProductById(id || '');
 
   const [activeTab, setActiveTab] = useState<'features' | 'pricing' | 'reviews' | 'cases'>('features');
@@ -39,6 +39,8 @@ export default function ProductDetail() {
 
   const favorite = isFavorite(product.id);
   const inCompare = isInCompare(product.id);
+  const productReviews = getProductReviews(product.id);
+  const productRating = getProductRating(product.id);
 
   const handleFavorite = () => {
     if (favorite) {
@@ -137,8 +139,8 @@ export default function ProductDetail() {
                     <div className="flex items-center gap-4 mt-4">
                       <div className="flex items-center gap-1">
                         <Star className="w-5 h-5 text-amber-400 fill-amber-400" />
-                        <span className="text-lg font-bold text-slate-900">{product.rating}</span>
-                        <span className="text-sm text-slate-500">({product.reviewCount}条评价)</span>
+                        <span className="text-lg font-bold text-slate-900">{productRating.rating}</span>
+                        <span className="text-sm text-slate-500">({productRating.reviewCount}条评价)</span>
                       </div>
                       <div className="h-4 w-px bg-slate-200" />
                       <div className="text-sm text-slate-600">
@@ -183,7 +185,7 @@ export default function ProductDetail() {
                     {[
                       { key: 'features', label: '功能详情' },
                       { key: 'pricing', label: '价格方案' },
-                      { key: 'reviews', label: `用户评价 (${product.reviews.length})` },
+                      { key: 'reviews', label: `用户评价 (${productReviews.length})` },
                       { key: 'cases', label: '成功案例' },
                     ].map((tab) => (
                       <button
@@ -299,21 +301,21 @@ export default function ProductDetail() {
                     <div className="space-y-6">
                       <div className="flex items-center gap-8 pb-6 border-b border-slate-100">
                         <div className="text-center">
-                          <div className="text-4xl font-bold text-slate-900">{product.rating}</div>
+                          <div className="text-4xl font-bold text-slate-900">{productRating.rating}</div>
                           <div className="flex items-center justify-center gap-1 mt-1">
                             {[1, 2, 3, 4, 5].map((i) => (
                               <Star
                                 key={i}
                                 className={cn(
                                   "w-4 h-4",
-                                  i <= Math.round(product.rating)
+                                  i <= Math.round(productRating.rating)
                                     ? "text-amber-400 fill-amber-400"
                                     : "text-slate-200"
                                 )}
                               />
                             ))}
                           </div>
-                          <div className="text-sm text-slate-500 mt-1">{product.reviewCount}条评价</div>
+                          <div className="text-sm text-slate-500 mt-1">{productRating.reviewCount}条评价</div>
                         </div>
                         <div className="flex-1 space-y-2">
                           {[5, 4, 3, 2, 1].map((star) => (
@@ -334,7 +336,7 @@ export default function ProductDetail() {
                       </div>
 
                       <div className="space-y-4">
-                        {product.reviews.map((review) => (
+                        {productReviews.map((review) => (
                           <div key={review.id} className="pb-4 border-b border-slate-100 last:border-0">
                             <div className="flex items-center gap-3 mb-2">
                               <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-medium">

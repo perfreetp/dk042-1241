@@ -357,6 +357,95 @@ export default function ProductList() {
 
             {/* Product Grid */}
             <div className="flex-1 min-w-0">
+              {/* Active Filters */}
+              {(filterOptions.industry || filterOptions.priceMin !== undefined || filterOptions.priceMax !== undefined || filterOptions.minRating || (filterOptions.features && filterOptions.features.length > 0) || (filterOptions.afterSaleScope && filterOptions.afterSaleScope.length > 0) || filterOptions.search) && (
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm text-slate-500 flex-shrink-0">已选条件：</span>
+                    
+                    {filterOptions.industry && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-600 text-sm rounded-full">
+                        行业：{filterOptions.industry}
+                        <button onClick={() => setFilterOptions({ industry: undefined })} className="hover:text-blue-800">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    )}
+                    
+                    {(filterOptions.priceMin !== undefined || filterOptions.priceMax !== undefined) && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-600 text-sm rounded-full">
+                        价格：¥{filterOptions.priceMin || 0} - ¥{filterOptions.priceMax || '不限'}
+                        <button onClick={() => setFilterOptions({ priceMin: undefined, priceMax: undefined })} className="hover:text-blue-800">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    )}
+                    
+                    {filterOptions.minRating && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-50 text-blue-600 text-sm rounded-full">
+                        评分：{filterOptions.minRating}分以上
+                        <button onClick={() => setFilterOptions({ minRating: undefined })} className="hover:text-blue-800">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    )}
+                    
+                    {filterOptions.features?.map((feature) => (
+                      <span key={feature} className="inline-flex items-center gap-1 px-3 py-1 bg-green-50 text-green-600 text-sm rounded-full">
+                        {feature}
+                        <button
+                          onClick={() => {
+                            const newFeatures = filterOptions.features!.filter((f) => f !== feature);
+                            setFilterOptions({ features: newFeatures.length > 0 ? newFeatures : undefined });
+                          }}
+                          className="hover:text-green-800"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                    
+                    {filterOptions.afterSaleScope?.map((scope) => (
+                      <span key={scope} className="inline-flex items-center gap-1 px-3 py-1 bg-purple-50 text-purple-600 text-sm rounded-full">
+                        售后：{scope}
+                        <button
+                          onClick={() => {
+                            const newScopes = filterOptions.afterSaleScope!.filter((s) => s !== scope);
+                            setFilterOptions({ afterSaleScope: newScopes.length > 0 ? newScopes : undefined });
+                          }}
+                          className="hover:text-purple-800"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    ))}
+                    
+                    {filterOptions.search && (
+                      <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-50 text-amber-600 text-sm rounded-full">
+                        搜索：{filterOptions.search}
+                        <button
+                          onClick={() => {
+                            setFilterOptions({ search: undefined });
+                            setSearchQuery('');
+                            setSearchParams({});
+                          }}
+                          className="hover:text-amber-800"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </span>
+                    )}
+                    
+                    <button
+                      onClick={clearFilters}
+                      className="text-sm text-slate-500 hover:text-slate-700 ml-1 flex-shrink-0"
+                    >
+                      清除全部
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {products.length > 0 ? (
                 <div className={cn(
                   "gap-6",

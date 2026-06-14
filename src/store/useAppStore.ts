@@ -98,6 +98,9 @@ interface AppState {
   getDashboardStats: () => DashboardStats;
   getProviderStats: () => ProviderStats;
   getCompareProducts: () => Product[];
+  getProviderAppointments: (providerId?: string) => Appointment[];
+  getProductReviews: (productId: string) => Review[];
+  getProductRating: (productId: string) => { rating: number; reviewCount: number };
 }
 
 export const useAppStore = create<AppState>()(
@@ -149,6 +152,8 @@ export const useAppStore = create<AppState>()(
           userName: '测试用户',
           productId: 'prod1',
           productName: '美团收银专业版',
+          providerId: 'p1',
+          providerName: '美团餐饮系统',
           consultantId: 'c1',
           consultantName: '张顾问',
           type: 'demo',
@@ -174,13 +179,18 @@ export const useAppStore = create<AppState>()(
       ],
       addAppointment: (appointment) => {
         const newId = `apt-${Date.now()}`;
-        const now = new Date();
-        const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+        const product = appointment.productId
+          ? products.find((p) => p.id === appointment.productId)
+          : undefined;
+        const providerId = product?.providerId;
+        const providerName = product?.providerName;
         set((state) => ({
           appointments: [
             {
               ...appointment,
               id: newId,
+              providerId,
+              providerName,
               createdAt: new Date().toISOString(),
             },
             ...state.appointments,
@@ -496,8 +506,9 @@ export const useAppStore = create<AppState>()(
       },
 
       getProviderStats: () => {
-        const { providerCases, providerInquiries } = get();
+        const { providerCases, providerInquiries, appointments } = get();
         const providerProducts = products.filter((p) => p.providerId === 'p1');
+        const providerAppointments = appointments.filter((a) => a.providerId === 'p1');
         return {
           totalProducts: providerProducts.length,
           totalInquiries: providerInquiries.length,
@@ -505,12 +516,53 @@ export const useAppStore = create<AppState>()(
           totalCases: providerCases.length + (products.find((p) => p.id === 'prod1')?.cases.length || 0),
           avgRating: 4.7,
           totalViews: 2340,
+          totalAppointments: providerAppointments.length,
+          pendingAppointments: providerAppointments.filter((a) => a.status === 'pending').length,
         };
       },
 
       getCompareProducts: () => {
         const { compareList } = get();
         return products.filter((p) => compareList.includes(p.id));
+      },
+
+      getProviderAppointments: (providerId = 'p1') => {
+        const { appointments } = get();
+        return appointments.filter((a) => a.providerId === providerId);
+      },
+
+      getProductReviews: (productId) => {
+        const { userReviews } = get();
+        const product = products.find((p) => p.id === productId);
+        const mockReviews = product?.reviews || [];
+        const userReviewsForProduct = userReviews
+          .filter((r) => r.productId === productId)
+          .map((r) => ({
+            id: r.id,
+            productId: r.productId,
+            userId: 'user1',
+            userName: r.productName ? '我' : '匿名用户',
+            userAvatar: r.productLogo,
+            rating: r.rating,
+            content: r.content,
+            tags: r.tags,
+            createdAt: r.createdAt,
+          })) as Review[];
+        return [...userReviewsForProduct, ...mockReviews];
+      },
+
+      getProductRating: (productId) => {
+        const { userReviews } = get();
+        const product = products.find((p) => p.id === productId);
+        const mockReviews = product?.reviews || [];
+        const userReviewsForProduct = userReviews.filter((r) => r.productId === productId);
+        const allReviews = [...userReviewsForProduct, ...mockReviews];
+        if (allReviews.length === 0) return { rating: 0, reviewCount: 0 };
+        const sum = allReviews.reduce((acc, r) => acc + r.rating, 0);
+        return {
+          rating: Math.round((sum / allReviews.length) * 10) / 10,
+          reviewCount: allReviews.length,
+        };
       },
     }),
     {

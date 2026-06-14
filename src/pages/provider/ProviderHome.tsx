@@ -10,6 +10,7 @@ import {
   Clock,
   CheckCircle,
   BarChart3,
+  Calendar,
 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import ProviderLayout from '@/components/layout/ProviderLayout';
@@ -28,6 +29,14 @@ export default function ProviderHome() {
       trend: '+1',
     },
     {
+      label: '总预约数',
+      value: stats.totalAppointments,
+      icon: <Calendar className="w-6 h-6" />,
+      bgColor: 'bg-emerald-50',
+      iconColor: 'text-emerald-500',
+      trend: '+3',
+    },
+    {
       label: '总咨询量',
       value: stats.totalInquiries,
       icon: <MessageCircle className="w-6 h-6" />,
@@ -36,8 +45,8 @@ export default function ProviderHome() {
       trend: '+12%',
     },
     {
-      label: '待处理',
-      value: stats.pendingInquiries,
+      label: '待确认预约',
+      value: stats.pendingAppointments,
       icon: <Clock className="w-6 h-6" />,
       bgColor: 'bg-rose-50',
       iconColor: 'text-rose-500',
@@ -89,7 +98,7 @@ export default function ProviderHome() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           {statCards.map((stat, i) => (
             <div
               key={i}
@@ -169,6 +178,20 @@ export default function ProviderHome() {
                 <div className="flex-1">
                   <div className="font-medium text-slate-900 text-sm">产品管理</div>
                   <div className="text-xs text-slate-500">管理产品信息</div>
+                </div>
+                <ArrowRight className="w-4 h-4 text-slate-400" />
+              </Link>
+
+              <Link
+                to="/provider/appointments"
+                className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors"
+              >
+                <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-600">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div className="flex-1">
+                  <div className="font-medium text-slate-900 text-sm">预约管理</div>
+                  <div className="text-xs text-slate-500">查看预约需求</div>
                 </div>
                 <ArrowRight className="w-4 h-4 text-slate-400" />
               </Link>

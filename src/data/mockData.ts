@@ -228,14 +228,22 @@ const generateCases = (productId: string, industry: Industry): Product['cases'] 
 ];
 
 const productData = [
-  { id: 'prod1', name: '美团收银专业版', providerId: 'p1', providerName: '美团餐饮系统', industry: '餐饮' as Industry, priceMin: 99, priceMax: 499, rating: 4.8, reviewCount: 2356, tags: ['大品牌', '功能全', '外卖集成'] },
-  { id: 'prod2', name: '有赞美业', providerId: 'p2', providerName: '有赞科技', industry: '美业' as Industry, priceMin: 199, priceMax: 899, rating: 4.6, reviewCount: 1289, tags: ['私域运营', '营销强', '小程序'] },
-  { id: 'prod3', name: '客如云收银系统', providerId: 'p3', providerName: '客如云', industry: '餐饮' as Industry, priceMin: 69, priceMax: 299, rating: 4.5, reviewCount: 1876, tags: ['性价比高', '上手快', '稳定'] },
-  { id: 'prod4', name: '校宝SCRM', providerId: 'p4', providerName: '校宝在线', industry: '教育' as Industry, priceMin: 299, priceMax: 999, rating: 4.7, reviewCount: 956, tags: ['教务管理', '招生获客', '家校沟通'] },
-  { id: 'prod5', name: '微医云诊所', providerId: 'p5', providerName: '微医', industry: '医疗' as Industry, priceMin: 399, priceMax: 1299, rating: 4.6, reviewCount: 678, tags: ['电子处方', '医保对接', '专业'] },
-  { id: 'prod6', name: '美团丽人商家版', providerId: 'p6', providerName: '美团丽人', industry: '美业' as Industry, priceMin: 149, priceMax: 599, rating: 4.5, reviewCount: 1567, tags: ['流量大', '预约方便', '团购'] },
-  { id: 'prod7', name: '有赞教育', providerId: 'p2', providerName: '有赞科技', industry: '教育' as Industry, priceMin: 249, priceMax: 799, rating: 4.5, reviewCount: 623, tags: ['线上授课', '知识付费', '裂变营销'] },
-  { id: 'prod8', name: '美团餐饮供应链', providerId: 'p1', providerName: '美团餐饮系统', industry: '餐饮' as Industry, priceMin: 199, priceMax: 699, rating: 4.7, reviewCount: 890, tags: ['供应链', '成本管控', '食材采购'] },
+  { id: 'prod1', name: '美团收银专业版', providerId: 'p1', providerName: '美团餐饮系统', industry: '餐饮' as Industry, priceMin: 99, priceMax: 499, rating: 4.8, reviewCount: 2356, tags: ['大品牌', '功能全', '外卖集成'],
+    afterSaleScope: ['全国上门服务', '7x24小时在线客服', '一对一实施顾问', '免费培训课程', '定期版本更新', '数据安全保障', '专属客户经理'] },
+  { id: 'prod2', name: '有赞美业', providerId: 'p2', providerName: '有赞科技', industry: '美业' as Industry, priceMin: 199, priceMax: 899, rating: 4.6, reviewCount: 1289, tags: ['私域运营', '营销强', '小程序'],
+    afterSaleScope: ['7x12小时在线客服', '免费培训课程', '定期版本更新', '数据安全保障', '运营指导服务'] },
+  { id: 'prod3', name: '客如云收银系统', providerId: 'p3', providerName: '客如云', industry: '餐饮' as Industry, priceMin: 69, priceMax: 299, rating: 4.5, reviewCount: 1876, tags: ['性价比高', '上手快', '稳定'],
+    afterSaleScope: ['7x12小时在线客服', '定期版本更新', '数据安全保障'] },
+  { id: 'prod4', name: '校宝SCRM', providerId: 'p4', providerName: '校宝在线', industry: '教育' as Industry, priceMin: 299, priceMax: 999, rating: 4.7, reviewCount: 956, tags: ['教务管理', '招生获客', '家校沟通'],
+    afterSaleScope: ['上门服务', '一对一实施顾问', '免费培训课程', '定期版本更新', '数据安全保障', '专属客户经理'] },
+  { id: 'prod5', name: '微医云诊所', providerId: 'p5', providerName: '微医', industry: '医疗' as Industry, priceMin: 399, priceMax: 1299, rating: 4.6, reviewCount: 678, tags: ['电子处方', '医保对接', '专业'],
+    afterSaleScope: ['7x24小时在线客服', '一对一实施顾问', '免费培训课程', '定期版本更新', '数据安全保障', '医保对接支持'] },
+  { id: 'prod6', name: '美团丽人商家版', providerId: 'p6', providerName: '美团丽人', industry: '美业' as Industry, priceMin: 149, priceMax: 599, rating: 4.5, reviewCount: 1567, tags: ['流量大', '预约方便', '团购'],
+    afterSaleScope: ['7x12小时在线客服', '免费培训课程', '定期版本更新', '数据安全保障'] },
+  { id: 'prod7', name: '有赞教育', providerId: 'p2', providerName: '有赞科技', industry: '教育' as Industry, priceMin: 249, priceMax: 799, rating: 4.5, reviewCount: 623, tags: ['线上授课', '知识付费', '裂变营销'],
+    afterSaleScope: ['7x12小时在线客服', '免费培训课程', '定期版本更新', '运营指导服务', '数据安全保障'] },
+  { id: 'prod8', name: '美团餐饮供应链', providerId: 'p1', providerName: '美团餐饮系统', industry: '餐饮' as Industry, priceMin: 199, priceMax: 699, rating: 4.7, reviewCount: 890, tags: ['供应链', '成本管控', '食材采购'],
+    afterSaleScope: ['全国上门服务', '一对一实施顾问', '免费培训课程', '定期版本更新', '数据安全保障', '专属客户经理'] },
 ];
 
 export const products: Product[] = productData.map((p) => ({
@@ -248,7 +256,6 @@ export const products: Product[] = productData.map((p) => ({
     '7x12小时技术支持',
     '免费上门安装培训',
   ],
-  afterSaleScope: ['全国上门服务', '7x12小时在线客服', '一对一实施顾问', '免费培训课程', '定期版本更新', '数据安全保障'],
   features: generateFeatures(p.industry),
   pricingPlans: generatePricingPlans(p.priceMin),
   reviews: generateReviews(p.id),

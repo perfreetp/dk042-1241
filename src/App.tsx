@@ -14,6 +14,7 @@ import DashboardReviews from '@/pages/dashboard/DashboardReviews';
 import DashboardSettings from '@/pages/dashboard/DashboardSettings';
 import ProviderHome from '@/pages/provider/ProviderHome';
 import ProviderProducts from '@/pages/provider/ProviderProducts';
+import ProviderAppointments from '@/pages/provider/ProviderAppointments';
 import ProviderCases from '@/pages/provider/ProviderCases';
 import ProviderInquiries from '@/pages/provider/ProviderInquiries';
 import ProviderSettings from '@/pages/provider/ProviderSettings';
@@ -110,6 +111,14 @@ export default function App() {
           element={
             <ProtectedRoute requiredRole="provider">
               <ProviderProducts />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/provider/appointments"
+          element={
+            <ProtectedRoute requiredRole="provider">
+              <ProviderAppointments />
             </ProtectedRoute>
           }
         />

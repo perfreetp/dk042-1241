@@ -121,6 +121,8 @@ export interface Appointment {
   userName: string;
   productId?: string;
   productName?: string;
+  providerId?: string;
+  providerName?: string;
   consultantId?: string;
   consultantName?: string;
   type: AppointmentType;
@@ -186,4 +188,6 @@ export interface ProviderStats {
   totalCases: number;
   avgRating: number;
   totalViews: number;
+  totalAppointments: number;
+  pendingAppointments: number;
 }
