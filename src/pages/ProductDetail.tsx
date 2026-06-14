@@ -74,6 +74,8 @@ export default function ProductDetail() {
     addAppointment({
       userId: 'user1',
       userName: formData.name,
+      userPhone: formData.phone,
+      userCompany: formData.company,
       productId: product.id,
       productName: product.name,
       type: 'demo',

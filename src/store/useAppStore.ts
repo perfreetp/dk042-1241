@@ -848,15 +848,21 @@ export const useAppStore = create<AppState>()(
           .map((r) => ({
             id: r.id,
             productId: r.productId,
-            userId: 'user1',
-            userName: r.productName ? '我' : '匿名用户',
-            userAvatar: r.productLogo,
+            userId: r.userId || 'user1',
+            userName: r.userName,
             rating: r.rating,
             content: r.content,
             tags: r.tags,
             createdAt: r.createdAt,
-          })) as Review[];
-        return [...userReviewsForProduct, ...mockReviews];
+            helpful: r.helpful,
+            officialReply: r.officialReply,
+          }));
+        const mockReviewsMerged = mockReviews.map((r) => ({
+          ...r,
+          helpful: Math.floor(Math.random() * 30) + 5,
+          officialReply: undefined,
+        }));
+        return [...userReviewsForProduct, ...mockReviewsMerged];
       },
 
       getProductRating: (productId) => {

@@ -27,6 +27,8 @@ export default function Compare() {
     addAppointment({
       userId: 'user1',
       userName: appointmentForm.name,
+      userPhone: appointmentForm.phone,
+      userCompany: appointmentForm.company,
       productId: appointmentProduct.id,
       productName: appointmentProduct.name,
       type: 'demo',

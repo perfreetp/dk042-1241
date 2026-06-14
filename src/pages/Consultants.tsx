@@ -38,6 +38,8 @@ export default function Consultants() {
     addAppointment({
       userId: 'user1',
       userName: formData.name,
+      userPhone: formData.phone,
+      userCompany: formData.company,
       consultantId: consultant.id,
       consultantName: consultant.name,
       type: 'consultation',
