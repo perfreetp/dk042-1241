@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Filter, Grid3X3, List, SlidersHorizontal, X, ChevronDown, Star, Search } from 'lucide-react';
+import { Filter, Grid3X3, List, SlidersHorizontal, X, ChevronDown, Star, Search, BookmarkPlus, Bookmark, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { industries, featureCategories } from '@/data/mockData';
 import { cn } from '@/lib/utils';
@@ -11,12 +11,14 @@ import ProductCard from '@/components/cards/ProductCard';
 
 export default function ProductList() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { getFilteredProducts, filterOptions, setFilterOptions, currentIndustry } = useAppStore();
+  const { getFilteredProducts, filterOptions, setFilterOptions, savedFilters, saveFilter, deleteSavedFilter, applySavedFilter } = useAppStore();
   const products = getFilteredProducts();
   
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [showMobileFilter, setShowMobileFilter] = useState(false);
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [filterName, setFilterName] = useState('');
 
   useEffect(() => {
     const search = searchParams.get('search');
@@ -76,19 +78,98 @@ export default function ProductList() {
     setSearchParams({});
   };
 
+  const hasActiveFilters = useMemo(() => {
+    return filterOptions.industry
+      || filterOptions.priceMin !== undefined
+      || filterOptions.priceMax !== undefined
+      || filterOptions.minRating
+      || (filterOptions.features && filterOptions.features.length > 0)
+      || (filterOptions.afterSaleScope && filterOptions.afterSaleScope.length > 0)
+      || filterOptions.search;
+  }, [filterOptions]);
+
+  const activeSavedFilter = useMemo(() => {
+    return savedFilters.find((sf) => {
+      const sfKeys = Object.keys(sf.filterOptions).sort().join(',');
+      const curKeys = Object.keys(filterOptions).sort().join(',');
+      if (sfKeys !== curKeys) return false;
+      return JSON.stringify(sf.filterOptions) === JSON.stringify(filterOptions);
+    });
+  }, [savedFilters, filterOptions]);
+
+  const handleSaveFilter = () => {
+    if (!filterName.trim() || !hasActiveFilters) return;
+    saveFilter(filterName.trim(), { ...filterOptions });
+    setShowSaveModal(false);
+    setFilterName('');
+  };
+
+  const handleApplyFilter = (id: string) => {
+    applySavedFilter(id);
+  };
+
   const FilterSidebar = () => (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="font-semibold text-slate-900 flex items-center gap-2">
-          <SlidersHorizontal className="w-5 h-5" />
-          筛选条件
-        </h3>
-        <button
-          onClick={clearFilters}
-          className="text-sm text-blue-600 hover:text-blue-700"
-        >
-          重置
-        </button>
+      {/* 常用方案 */}
+      {savedFilters.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+              <Bookmark className="w-4 h-4 text-blue-500" />
+              常用筛选方案
+            </h3>
+          </div>
+          <div className="space-y-1.5">
+            {savedFilters.map((sf) => (
+              <div
+                key={sf.id}
+                className={cn(
+                  "flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-sm transition-colors group",
+                  activeSavedFilter?.id === sf.id
+                    ? "bg-blue-50 text-blue-600 border border-blue-200"
+                    : "hover:bg-slate-50 text-slate-600 border border-transparent"
+                )}
+              >
+                <button
+                  onClick={() => handleApplyFilter(sf.id)}
+                  className="flex-1 text-left min-w-0"
+                >
+                  <div className="font-medium truncate">{sf.name}</div>
+                  <div className="text-xs opacity-70 truncate">
+                    {[
+                      sf.filterOptions.industry && `行业:${sf.filterOptions.industry}`,
+                      sf.filterOptions.priceMax && `≤¥${sf.filterOptions.priceMax}`,
+                      sf.filterOptions.minRating && `${sf.filterOptions.minRating}分+`,
+                      sf.filterOptions.features?.length && `${sf.filterOptions.features.length}功能`,
+                    ].filter(Boolean).join(' · ') || '自定义组合'}
+                  </div>
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); deleteSavedFilter(sf.id); }}
+                  className="p-1 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all"
+                  title="删除方案"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="border-t border-slate-100 pt-4 first:border-t-0 first:pt-0">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-slate-900 flex items-center gap-2">
+            <SlidersHorizontal className="w-5 h-5" />
+            筛选条件
+          </h3>
+          <button
+            onClick={clearFilters}
+            className="text-sm text-blue-600 hover:text-blue-700"
+          >
+            重置
+          </button>
+        </div>
       </div>
 
       {/* 行业筛选 */}
@@ -243,25 +324,51 @@ export default function ProductList() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-slate-900">
-                  {filterOptions.industry || currentIndustry}SaaS产品库
-                </h1>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-2xl font-bold text-slate-900">
+                    {filterOptions.industry ? `${filterOptions.industry}SaaS产品库` : '全行业SaaS产品库'}
+                  </h1>
+                  {activeSavedFilter && (
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-medium rounded-full">
+                      <Bookmark className="w-3.5 h-3.5" />
+                      {activeSavedFilter.name}
+                    </span>
+                  )}
+                </div>
                 <p className="text-slate-500 mt-1">
                   共找到 <span className="font-medium text-blue-600">{products.length}</span> 款产品
                 </p>
               </div>
-              <form onSubmit={handleSearch} className="flex-1 max-w-md">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="搜索产品名称、功能..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-100 border-none rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
-                  />
-                </div>
-              </form>
+              <div className="flex items-center gap-3">
+                <form onSubmit={handleSearch} className="flex-1 max-w-md">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="搜索产品名称、功能..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-100 border-none rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white transition-all"
+                    />
+                  </div>
+                </form>
+                <button
+                  onClick={() => {
+                    if (hasActiveFilters) setShowSaveModal(true);
+                  }}
+                  disabled={!hasActiveFilters}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 px-3.5 py-2 text-sm font-medium rounded-xl transition-all whitespace-nowrap",
+                    hasActiveFilters
+                      ? "bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
+                      : "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  )}
+                  title={hasActiveFilters ? '保存当前筛选条件' : '先选择筛选条件再保存'}
+                >
+                  <BookmarkPlus className="w-4 h-4" />
+                  保存筛法
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -474,6 +581,67 @@ export default function ProductList() {
           </div>
         </div>
       </main>
+
+      {/* 保存筛选弹窗 */}
+      {showSaveModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => setShowSaveModal(false)}
+          />
+          <div className="relative bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
+            <button
+              onClick={() => setShowSaveModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">保存筛选方案</h3>
+            <p className="text-slate-500 mb-4 text-sm">
+              保存当前筛选条件，下次一键套用
+            </p>
+            <div className="mb-4 p-3 bg-slate-50 rounded-xl text-sm space-y-1">
+              <div className="text-slate-500 text-xs mb-1.5">当前筛选条件：</div>
+              {filterOptions.industry && <div>· 行业：{filterOptions.industry}</div>}
+              {(filterOptions.priceMin !== undefined || filterOptions.priceMax !== undefined) && (
+                <div>· 价格：¥{filterOptions.priceMin || 0} - ¥{filterOptions.priceMax || '不限'}</div>
+              )}
+              {filterOptions.minRating && <div>· 评分：{filterOptions.minRating} 分以上</div>}
+              {filterOptions.features?.length ? <div>· 功能：{filterOptions.features.join('、')}</div> : null}
+              {filterOptions.afterSaleScope?.length ? <div>· 售后：{filterOptions.afterSaleScope.join('、')}</div> : null}
+              {filterOptions.search && <div>· 搜索词：{filterOptions.search}</div>}
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">方案名称</label>
+                <input
+                  type="text"
+                  placeholder="如：高性价比餐饮方案"
+                  value={filterName}
+                  onChange={(e) => setFilterName(e.target.value)}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  autoFocus
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveFilter}
+                  disabled={!filterName.trim()}
+                  className="flex-1 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  保存
+                </button>
+                <button
+                  onClick={() => setShowSaveModal(false)}
+                  className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-colors"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Footer />
     </div>

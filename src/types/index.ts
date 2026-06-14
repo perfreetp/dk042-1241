@@ -115,10 +115,21 @@ export interface Favorite {
 export type AppointmentType = 'demo' | 'consultation';
 export type AppointmentStatus = 'pending' | 'confirmed' | 'completed' | 'cancelled';
 
+export interface AppointmentFollowup {
+  id: string;
+  action: 'created' | 'confirmed' | 'completed' | 'cancelled' | 'note' | 'reschedule';
+  operatorName: string;
+  operatorRole: 'merchant' | 'provider' | 'consultant';
+  content: string;
+  createdAt: string;
+}
+
 export interface Appointment {
   id: string;
   userId: string;
   userName: string;
+  userPhone?: string;
+  userCompany?: string;
   productId?: string;
   productName?: string;
   providerId?: string;
@@ -131,6 +142,7 @@ export interface Appointment {
   status: AppointmentStatus;
   notes: string;
   createdAt: string;
+  followups?: AppointmentFollowup[];
 }
 
 export type CommunicationType = 'note' | 'call' | 'email' | 'meeting';

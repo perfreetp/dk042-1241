@@ -17,6 +17,7 @@ import ProviderProducts from '@/pages/provider/ProviderProducts';
 import ProviderAppointments from '@/pages/provider/ProviderAppointments';
 import ProviderCases from '@/pages/provider/ProviderCases';
 import ProviderInquiries from '@/pages/provider/ProviderInquiries';
+import ProviderReviews from '@/pages/provider/ProviderReviews';
 import ProviderSettings from '@/pages/provider/ProviderSettings';
 import { useAppStore } from '@/store/useAppStore';
 
@@ -119,6 +120,14 @@ export default function App() {
           element={
             <ProtectedRoute requiredRole="provider">
               <ProviderAppointments />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/provider/reviews"
+          element={
+            <ProtectedRoute requiredRole="provider">
+              <ProviderReviews />
             </ProtectedRoute>
           }
         />

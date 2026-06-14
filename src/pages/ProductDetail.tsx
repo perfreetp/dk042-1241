@@ -1,21 +1,23 @@
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Star, Heart, ChevronLeft, Check, X, Plus, Calendar, MessageSquare, Shield, Clock, Users, Award, ArrowRight } from 'lucide-react';
+import { Star, Heart, ChevronLeft, Check, X, Plus, Calendar, MessageSquare, Shield, Clock, Users, Award, ArrowRight, MessageSquareReply, Sparkles, ThumbsUp, BarChart3, Hash } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { cn } from '@/lib/utils';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getProductById, isFavorite, addFavorite, removeFavorite, addToCompare, removeFromCompare, isInCompare, compareList, addAppointment, getProductReviews, getProductRating } = useAppStore();
+  const { getProductById, isFavorite, addFavorite, removeFavorite, addToCompare, removeFromCompare, isInCompare, compareList, addAppointment, getProductReviews, getProductRating, getProductReviewAggregate } = useAppStore();
   const product = getProductById(id || '');
 
   const [activeTab, setActiveTab] = useState<'features' | 'pricing' | 'reviews' | 'cases'>('features');
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', phone: '', company: '', date: '', notes: '' });
   const [submitted, setSubmitted] = useState(false);
+  const [reviewSort, setReviewSort] = useState<'latest' | 'highest' | 'lowest'>('latest');
+  const [reviewFilter, setReviewFilter] = useState<0 | 1 | 2 | 3 | 4 | 5>(0);
 
   if (!product) {
     return (
@@ -41,6 +43,15 @@ export default function ProductDetail() {
   const inCompare = isInCompare(product.id);
   const productReviews = getProductReviews(product.id);
   const productRating = getProductRating(product.id);
+  const reviewAgg = getProductReviewAggregate(product.id);
+
+  const displayedReviews = useMemo(() => {
+    let list = [...reviewAgg.reviewsSorted];
+    if (reviewFilter > 0) list = list.filter((r) => r.rating === reviewFilter);
+    if (reviewSort === 'highest') list = list.sort((a, b) => b.rating - a.rating);
+    else if (reviewSort === 'lowest') list = list.sort((a, b) => a.rating - b.rating);
+    return list;
+  }, [reviewAgg, reviewFilter, reviewSort]);
 
   const handleFavorite = () => {
     if (favorite) {
@@ -299,82 +310,237 @@ export default function ProductDetail() {
 
                   {activeTab === 'reviews' && (
                     <div className="space-y-6">
-                      <div className="flex items-center gap-8 pb-6 border-b border-slate-100">
-                        <div className="text-center">
-                          <div className="text-4xl font-bold text-slate-900">{productRating.rating}</div>
-                          <div className="flex items-center justify-center gap-1 mt-1">
-                            {[1, 2, 3, 4, 5].map((i) => (
-                              <Star
-                                key={i}
-                                className={cn(
-                                  "w-4 h-4",
-                                  i <= Math.round(productRating.rating)
-                                    ? "text-amber-400 fill-amber-400"
-                                    : "text-slate-200"
-                                )}
-                              />
-                            ))}
-                          </div>
-                          <div className="text-sm text-slate-500 mt-1">{productRating.reviewCount}条评价</div>
-                        </div>
-                        <div className="flex-1 space-y-2">
-                          {[5, 4, 3, 2, 1].map((star) => (
-                            <div key={star} className="flex items-center gap-3">
-                              <span className="text-xs text-slate-500 w-8">{star}星</span>
-                              <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-amber-400 rounded-full"
-                                  style={{ width: `${star === 5 ? 60 : star === 4 ? 25 : star === 3 ? 10 : 5}%` }}
-                                />
-                              </div>
-                              <span className="text-xs text-slate-400 w-10">
-                                {star === 5 ? '60%' : star === 4 ? '25%' : star === 3 ? '10%' : '5%'}
-                              </span>
+                      {/* 评价概览 - 评分分布 + 平均分 */}
+                      <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 pb-6 border-b border-slate-100">
+                        <div className="lg:col-span-2 p-6 bg-gradient-to-br from-amber-50 via-white to-orange-50 rounded-2xl border border-amber-100">
+                          <div className="text-center">
+                            <div className="flex items-baseline justify-center gap-1">
+                              <div className="text-5xl font-bold text-slate-900">{reviewAgg.averageRating.toFixed(1)}</div>
+                              <div className="text-lg text-slate-400">/ 5.0</div>
                             </div>
+                            <div className="flex items-center justify-center gap-1 mt-3">
+                              {[1, 2, 3, 4, 5].map((i) => (
+                                <Star
+                                  key={i}
+                                  className={cn(
+                                    "w-5 h-5",
+                                    i <= Math.round(reviewAgg.averageRating)
+                                      ? "text-amber-400 fill-amber-400"
+                                      : "text-slate-200"
+                                  )}
+                                />
+                              ))}
+                            </div>
+                            <div className="text-sm text-slate-500 mt-2">
+                              基于 <span className="font-semibold text-slate-700">{reviewAgg.totalCount}</span> 条真实评价
+                            </div>
+                          </div>
+                          {reviewAgg.tagStats.length > 0 && (
+                            <div className="mt-5 pt-5 border-t border-amber-100/70">
+                              <div className="flex items-center gap-1.5 mb-3 text-xs font-semibold text-slate-600">
+                                <Hash className="w-3.5 h-3.5" />
+                                用户最爱标签
+                              </div>
+                              <div className="flex flex-wrap gap-1.5 justify-center">
+                                {reviewAgg.tagStats.map(({ tag, count }) => (
+                                  <span
+                                    key={tag}
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 bg-white text-slate-700 text-xs rounded-full border border-slate-200 shadow-sm hover:shadow transition-shadow"
+                                  >
+                                    {tag}
+                                    <span className="px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 font-bold">{count}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 评分分布柱状图 */}
+                        <div className="lg:col-span-3 p-6 space-y-5">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <BarChart3 className="w-4 h-4 text-slate-500" />
+                              <div className="text-sm font-semibold text-slate-800">评分分布</div>
+                            </div>
+                            <div className="text-xs text-slate-400">共 {reviewAgg.totalCount} 条</div>
+                          </div>
+                          <div className="space-y-3">
+                            {[5, 4, 3, 2, 1].map((s) => {
+                              const star = s as 5 | 4 | 3 | 2 | 1;
+                              const count = reviewAgg.ratingDistribution[star] || 0;
+                              const pct = reviewAgg.totalCount > 0 ? (count / reviewAgg.totalCount) * 100 : 0;
+                              return (
+                                <div key={star} className="flex items-center gap-3">
+                                  <div className="flex items-center gap-1 w-14 flex-shrink-0">
+                                    <span className="text-xs font-semibold text-slate-600 w-4">{star}</span>
+                                    <Star className={cn("w-3.5 h-3.5", star <= Math.round(reviewAgg.averageRating) ? "text-amber-400 fill-amber-400" : "text-slate-300")} />
+                                  </div>
+                                  <button
+                                    onClick={() => setReviewFilter(reviewFilter === star ? 0 : star)}
+                                    className="flex-1 h-7 bg-slate-50 rounded-full overflow-hidden relative group border border-slate-100 transition-all hover:border-amber-200"
+                                  >
+                                    <div
+                                      className={cn(
+                                        "h-full rounded-full transition-all duration-500 group-hover:brightness-110",
+                                        star >= 4 ? "bg-gradient-to-r from-amber-400 to-amber-500"
+                                          : star === 3 ? "bg-gradient-to-r from-amber-300 to-orange-400"
+                                          : "bg-gradient-to-r from-rose-300 to-rose-400"
+                                      )}
+                                      style={{ width: `${Math.max(pct, count > 0 ? 4 : 0)}%` }}
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-between px-3">
+                                      <span className="text-[11px] font-semibold text-slate-700">{count} 条</span>
+                                      {pct >= 15 && <span className="text-[11px] font-semibold text-white/90">{pct.toFixed(0)}%</span>}
+                                    </div>
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          {reviewFilter > 0 && (
+                            <div className="pt-2">
+                              <button
+                                onClick={() => setReviewFilter(0)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 text-xs font-medium rounded-full border border-blue-100 hover:bg-blue-100 transition-colors"
+                              >
+                                <X className="w-3 h-3" />清除筛选：当前查看 {reviewFilter} 星评价
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* 排序工具栏 */}
+                      <div className="flex items-center justify-between flex-wrap gap-3">
+                        <div className="text-sm text-slate-500">
+                          显示 <span className="font-semibold text-slate-800">{displayedReviews.length}</span> / {reviewAgg.totalCount} 条
+                        </div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <div className="text-xs text-slate-500 mr-1">排序：</div>
+                          {[
+                            { k: 'latest', l: '最新' },
+                            { k: 'highest', l: '评分最高' },
+                            { k: 'lowest', l: '评分最低' },
+                          ].map((o) => (
+                            <button
+                              key={o.k}
+                              onClick={() => setReviewSort(o.k as typeof reviewSort)}
+                              className={cn(
+                                "px-3 py-1.5 text-xs font-medium rounded-lg transition-colors",
+                                reviewSort === o.k
+                                  ? "bg-blue-600 text-white shadow-sm"
+                                  : "bg-slate-50 text-slate-600 hover:bg-slate-100 border border-slate-200"
+                              )}
+                            >
+                              {o.l}
+                            </button>
                           ))}
                         </div>
                       </div>
 
-                      <div className="space-y-4">
-                        {productReviews.map((review) => (
-                          <div key={review.id} className="pb-4 border-b border-slate-100 last:border-0">
-                            <div className="flex items-center gap-3 mb-2">
-                              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-medium">
-                                {review.userName.charAt(0)}
-                              </div>
-                              <div className="flex-1">
-                                <div className="font-medium text-slate-900">{review.userName}</div>
-                                <div className="flex items-center gap-2">
-                                  <div className="flex">
-                                    {[1, 2, 3, 4, 5].map((i) => (
-                                      <Star
-                                        key={i}
-                                        className={cn(
-                                          "w-3 h-3",
-                                          i <= review.rating
-                                            ? "text-amber-400 fill-amber-400"
-                                            : "text-slate-200"
-                                        )}
-                                      />
-                                    ))}
+                      {/* 评价列表 */}
+                      <div className="space-y-5">
+                        {displayedReviews.length > 0 ? (
+                          displayedReviews.map((review) => (
+                            <div key={review.id} className="pb-5 border-b border-slate-100 last:border-0 last:pb-0">
+                              <div className="flex items-start gap-4">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-md flex-shrink-0">
+                                  {review.userName.charAt(0)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                                    <div>
+                                      <div className="font-semibold text-slate-900 flex items-center gap-2">
+                                        {review.userName}
+                                        <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-semibold rounded-full border border-blue-100">
+                                          已验证购买
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-3 mt-1">
+                                        <div className="flex">
+                                          {[1, 2, 3, 4, 5].map((i) => (
+                                            <Star
+                                              key={i}
+                                              className={cn(
+                                                "w-3.5 h-3.5",
+                                                i <= review.rating
+                                                  ? "text-amber-400 fill-amber-400"
+                                                  : "text-slate-200"
+                                              )}
+                                            />
+                                          ))}
+                                        </div>
+                                        <span className="text-xs text-slate-400 font-mono">{review.createdAt}</span>
+                                        <span className="inline-flex items-center gap-1 text-xs text-slate-400">
+                                          <ThumbsUp className="w-3 h-3" />
+                                          {review.helpful}
+                                        </span>
+                                      </div>
+                                    </div>
                                   </div>
-                                  <span className="text-xs text-slate-400">{review.createdAt}</span>
+
+                                  <p className="text-[15px] text-slate-700 leading-relaxed mt-3">
+                                    {review.content}
+                                  </p>
+
+                                  {review.tags.length > 0 && (
+                                    <div className="mt-3 flex flex-wrap gap-1.5">
+                                      {review.tags.map((tag) => (
+                                        <span
+                                          key={tag}
+                                          className="px-2.5 py-1 text-xs bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100 font-medium"
+                                        >
+                                          #{tag}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  )}
+
+                                  {/* 官方回复 */}
+                                  {review.officialReply && (
+                                    <div className="mt-4 ml-2 relative pl-4">
+                                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-400 to-blue-400 rounded-full" />
+                                      <div className="p-4 bg-gradient-to-br from-emerald-50/80 via-blue-50/50 to-white rounded-xl border border-emerald-100">
+                                        <div className="flex items-center justify-between mb-2 flex-wrap gap-1.5">
+                                          <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center">
+                                              <Sparkles className="w-3 h-3 text-emerald-600" />
+                                            </div>
+                                            <span className="text-xs font-bold text-emerald-700">
+                                              {review.officialReply.replierName}
+                                            </span>
+                                            <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-[10px] font-bold rounded-full border border-emerald-200">
+                                              <MessageSquareReply className="w-2.5 h-2.5 inline mr-0.5" />
+                                              官方回复
+                                            </span>
+                                          </div>
+                                          <span className="text-[11px] text-slate-400 font-mono">
+                                            {review.officialReply.replyTime}
+                                          </span>
+                                        </div>
+                                        <div className="text-sm text-slate-700 leading-relaxed">
+                                          {review.officialReply.content}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </div>
-                            <p className="text-sm text-slate-600 leading-relaxed">{review.content}</p>
-                            <div className="flex flex-wrap gap-1.5 mt-3">
-                              {review.tags.map((tag) => (
-                                <span
-                                  key={tag}
-                                  className="px-2 py-0.5 text-xs bg-slate-100 text-slate-600 rounded"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
+                          ))
+                        ) : (
+                          <div className="text-center py-12">
+                            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                              <Star className="w-8 h-8 text-slate-300" />
+                            </div>
+                            <div className="text-slate-500">
+                              {reviewFilter > 0
+                                ? `暂无 ${reviewFilter} 星评价，试试其他筛选吧`
+                                : '还没有评价，快来发表第一条吧'}
                             </div>
                           </div>
-                        ))}
+                        )}
                       </div>
                     </div>
                   )}

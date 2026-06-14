@@ -36,6 +36,8 @@ export default function DashboardReviews() {
     const product = products.find((p) => p.id === newReview.productId);
     if (!product) return;
     addUserReview({
+      userId: 'user1',
+      userName: '测试用户',
       productId: product.id,
       productName: product.name,
       productLogo: product.logo,
