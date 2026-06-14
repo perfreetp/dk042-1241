@@ -1,75 +1,18 @@
 import { useState } from 'react';
 import { MessageCircle, Send, Clock, CheckCircle, User, Filter } from 'lucide-react';
+import { useAppStore } from '@/store/useAppStore';
 import { cn } from '@/lib/utils';
 import ProviderLayout from '@/components/layout/ProviderLayout';
 
-const mockInquiries = [
-  {
-    id: 1,
-    userName: '李老板',
-    userPhone: '138****8888',
-    company: '美味餐饮店',
-    product: '美团收银专业版',
-    message: '想了解连锁门店的价格方案，我们有5家店',
-    time: '10分钟前',
-    status: 'pending',
-    replies: [
-      { role: 'user', content: '想了解连锁门店的价格方案', time: '10:30' },
-    ],
-  },
-  {
-    id: 2,
-    userName: '王经理',
-    userPhone: '139****6666',
-    company: 'XX餐饮连锁',
-    product: '美团餐饮供应链',
-    message: '请问支持多少家门店的库存管理？',
-    time: '1小时前',
-    status: 'pending',
-    replies: [
-      { role: 'user', content: '请问支持多少家门店的库存管理？', time: '09:45' },
-    ],
-  },
-  {
-    id: 3,
-    userName: '张总',
-    userPhone: '137****9999',
-    company: '张总餐饮集团',
-    product: '美团收银专业版',
-    message: '已经收到报价，考虑中',
-    time: '昨天',
-    status: 'replied',
-    replies: [
-      { role: 'user', content: '报价单能再优惠点吗？', time: '昨天 14:30' },
-      { role: 'me', content: '您好，已经是最优惠价格了，我们还提供免费培训服务', time: '昨天 15:00' },
-      { role: 'user', content: '好的，我再考虑考虑', time: '昨天 15:30' },
-    ],
-  },
-  {
-    id: 4,
-    userName: '陈店长',
-    userPhone: '136****5555',
-    company: '陈记火锅',
-    product: '美团收银专业版',
-    message: '准备采购，约个时间上门演示',
-    time: '2天前',
-    status: 'completed',
-    replies: [
-      { role: 'user', content: '准备采购，约个时间上门演示', time: '前天 10:00' },
-      { role: 'me', content: '好的，明天下午2点可以吗？', time: '前天 10:30' },
-      { role: 'user', content: '可以的，地址是...', time: '前天 11:00' },
-    ],
-  },
-];
-
 export default function ProviderInquiries() {
-  const [selectedId, setSelectedId] = useState<number | null>(1);
+  const { providerInquiries, addProviderInquiryReply } = useAppStore();
+  const [selectedId, setSelectedId] = useState<string | null>(providerInquiries[0]?.id || null);
   const [filter, setFilter] = useState<'all' | 'pending' | 'replied' | 'completed'>('all');
   const [replyText, setReplyText] = useState('');
 
-  const selectedInquiry = mockInquiries.find((i) => i.id === selectedId);
+  const selectedInquiry = providerInquiries.find((i) => i.id === selectedId);
 
-  const filteredInquiries = mockInquiries.filter((i) => {
+  const filteredInquiries = providerInquiries.filter((i) => {
     if (filter === 'all') return true;
     return i.status === filter;
   });
@@ -81,9 +24,9 @@ export default function ProviderInquiries() {
   };
 
   const handleSend = () => {
-    if (!replyText.trim()) return;
+    if (!replyText.trim() || !selectedId) return;
+    addProviderInquiryReply(selectedId, replyText.trim());
     setReplyText('');
-    alert('回复已发送');
   };
 
   return (
@@ -110,7 +53,6 @@ export default function ProviderInquiries() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-200px)] min-h-[500px]">
-          {/* Inquiry List */}
           <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col">
             <div className="p-4 border-b border-slate-100">
               <h2 className="font-semibold text-slate-900">
@@ -152,7 +94,6 @@ export default function ProviderInquiries() {
             </div>
           </div>
 
-          {/* Chat Area */}
           <div className="md:col-span-2 bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col">
             {selectedInquiry ? (
               <>

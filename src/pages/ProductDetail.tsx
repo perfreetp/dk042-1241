@@ -9,11 +9,13 @@ import Footer from '@/components/layout/Footer';
 export default function ProductDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { getProductById, isFavorite, addFavorite, removeFavorite, addToCompare, removeFromCompare, isInCompare, compareList } = useAppStore();
+  const { getProductById, isFavorite, addFavorite, removeFavorite, addToCompare, removeFromCompare, isInCompare, compareList, addAppointment } = useAppStore();
   const product = getProductById(id || '');
 
   const [activeTab, setActiveTab] = useState<'features' | 'pricing' | 'reviews' | 'cases'>('features');
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [formData, setFormData] = useState({ name: '', phone: '', company: '', date: '', notes: '' });
+  const [submitted, setSubmitted] = useState(false);
 
   if (!product) {
     return (
@@ -54,6 +56,28 @@ export default function ProductDetail() {
     }
   };
 
+  const handleSubmit = () => {
+    if (!formData.name || !formData.phone) return;
+    addAppointment({
+      userId: 'user1',
+      userName: formData.name,
+      productId: product.id,
+      productName: product.name,
+      type: 'demo',
+      date: formData.date || new Date().toISOString().split('T')[0],
+      time: '',
+      status: 'pending',
+      notes: formData.notes,
+    });
+    setSubmitted(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowAppointmentModal(false);
+    setSubmitted(false);
+    setFormData({ name: '', phone: '', company: '', date: '', notes: '' });
+  };
+
   const featureCategories = [...new Set(product.features.map((f) => f.category))];
 
   return (
@@ -61,7 +85,6 @@ export default function ProductDetail() {
       <Header />
 
       <main className="flex-1">
-        {/* Breadcrumb */}
         <div className="bg-white border-b border-slate-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center gap-2 text-sm">
@@ -82,9 +105,7 @@ export default function ProductDetail() {
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
-              {/* Product Header Card */}
               <div className="bg-white rounded-2xl p-6 border border-slate-200">
                 <div className="flex items-start gap-6">
                   <img
@@ -156,7 +177,6 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              {/* Tabs */}
               <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
                 <div className="border-b border-slate-200">
                   <div className="flex">
@@ -392,9 +412,7 @@ export default function ProductDetail() {
               </div>
             </div>
 
-            {/* Sidebar */}
             <div className="space-y-6">
-              {/* Sticky Action Card */}
               <div className="bg-white rounded-2xl p-6 border border-slate-200 sticky top-24">
                 <h3 className="font-semibold text-slate-900 mb-4">快速操作</h3>
                 <div className="space-y-3">
@@ -472,7 +490,6 @@ export default function ProductDetail() {
                 </div>
               </div>
 
-              {/* Provider Info */}
               <div className="bg-white rounded-2xl p-6 border border-slate-200">
                 <h3 className="font-semibold text-slate-900 mb-4">服务商信息</h3>
                 <div className="flex items-center gap-3 mb-4">
@@ -495,72 +512,106 @@ export default function ProductDetail() {
         </div>
       </main>
 
-      {/* Appointment Modal */}
       {showAppointmentModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/50"
-            onClick={() => setShowAppointmentModal(false)}
+            onClick={handleCloseModal}
           />
           <div className="relative bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
             <button
-              onClick={() => setShowAppointmentModal(false)}
+              onClick={handleCloseModal}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
             >
               <X className="w-5 h-5" />
             </button>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">预约产品演示</h3>
-            <p className="text-slate-500 mb-6">填写信息，专属顾问将尽快与你联系</p>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">姓名</label>
-                <input
-                  type="text"
-                  placeholder="请输入姓名"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
+
+            {submitted ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-8 h-8 text-green-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">预约成功！</h3>
+                <p className="text-slate-500 mb-6">专属顾问将尽快与你联系，可在商家后台「预约管理」中查看进度</p>
+                <div className="flex gap-3">
+                  <Link
+                    to="/dashboard/appointments"
+                    className="flex-1 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors text-center"
+                  >
+                    查看预约
+                  </Link>
+                  <button
+                    onClick={handleCloseModal}
+                    className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-colors"
+                  >
+                    继续浏览
+                  </button>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">手机号</label>
-                <input
-                  type="tel"
-                  placeholder="请输入手机号"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">公司名称</label>
-                <input
-                  type="text"
-                  placeholder="请输入公司/门店名称"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">预约时间</label>
-                <input
-                  type="date"
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">备注</label>
-                <textarea
-                  placeholder="请描述你的具体需求"
-                  rows={3}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
-                />
-              </div>
-              <button
-                onClick={() => {
-                  setShowAppointmentModal(false);
-                  alert('预约成功！顾问将尽快与你联系。');
-                }}
-                className="w-full py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
-              >
-                提交预约
-              </button>
-            </div>
+            ) : (
+              <>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">预约产品演示</h3>
+                <p className="text-slate-500 mb-6">填写信息，专属顾问将尽快与你联系</p>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">姓名 <span className="text-red-500">*</span></label>
+                    <input
+                      type="text"
+                      placeholder="请输入姓名"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">手机号 <span className="text-red-500">*</span></label>
+                    <input
+                      type="tel"
+                      placeholder="请输入手机号"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">公司名称</label>
+                    <input
+                      type="text"
+                      placeholder="请输入公司/门店名称"
+                      value={formData.company}
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">预约时间</label>
+                    <input
+                      type="date"
+                      value={formData.date}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">备注</label>
+                    <textarea
+                      placeholder="请描述你的具体需求"
+                      rows={3}
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
+                    />
+                  </div>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!formData.name || !formData.phone}
+                    className="w-full py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    提交预约
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

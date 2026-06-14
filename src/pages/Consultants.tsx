@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Star, Calendar, MessageSquare, Award, Clock, Check, X } from 'lucide-react';
 import { consultants } from '@/data/mockData';
+import { useAppStore } from '@/store/useAppStore';
 import { cn } from '@/lib/utils';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
@@ -8,6 +10,7 @@ import Footer from '@/components/layout/Footer';
 export default function Consultants() {
   const [selectedConsultant, setSelectedConsultant] = useState<string | null>(null);
   const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -17,20 +20,38 @@ export default function Consultants() {
     notes: '',
   });
 
+  const { addAppointment } = useAppStore();
+
   const handleAppointment = (consultantId: string) => {
     setSelectedConsultant(consultantId);
     setShowAppointmentModal(true);
+    setSubmitted(false);
   };
 
   const consultant = consultants.find((c) => c.id === selectedConsultant);
 
   const handleSubmit = () => {
     if (!formData.name || !formData.phone) {
-      alert('请填写姓名和手机号');
       return;
     }
-    alert('预约成功！顾问将尽快与你联系。');
+    if (!consultant) return;
+    addAppointment({
+      userId: 'user1',
+      userName: formData.name,
+      consultantId: consultant.id,
+      consultantName: consultant.name,
+      type: 'consultation',
+      date: formData.date || new Date().toISOString().split('T')[0],
+      time: formData.time,
+      status: 'pending',
+      notes: formData.notes || '预约咨询',
+    });
+    setSubmitted(true);
+  };
+
+  const handleCloseModal = () => {
     setShowAppointmentModal(false);
+    setSubmitted(false);
     setFormData({ name: '', phone: '', company: '', date: '', time: '', notes: '' });
   };
 
@@ -39,7 +60,6 @@ export default function Consultants() {
       <Header />
 
       <main className="flex-1">
-        {/* Hero */}
         <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-blue-900 text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
             <div className="max-w-2xl">
@@ -80,7 +100,6 @@ export default function Consultants() {
           </div>
         </div>
 
-        {/* Consultant List */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="flex items-end justify-between mb-8">
             <div>
@@ -153,7 +172,6 @@ export default function Consultants() {
             ))}
           </div>
 
-          {/* Service Features */}
           <div className="mt-16">
             <h2 className="text-2xl font-bold text-slate-900 text-center mb-10">
               我们的服务承诺
@@ -181,122 +199,149 @@ export default function Consultants() {
         </div>
       </main>
 
-      {/* Appointment Modal */}
       {showAppointmentModal && consultant && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/50"
-            onClick={() => setShowAppointmentModal(false)}
+            onClick={handleCloseModal}
           />
           <div className="relative bg-white rounded-2xl w-full max-w-md p-6 shadow-xl max-h-[90vh] overflow-y-auto">
             <button
-              onClick={() => setShowAppointmentModal(false)}
+              onClick={handleCloseModal}
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-3 mb-6">
-              <img
-                src={consultant.avatar}
-                alt={consultant.name}
-                className="w-14 h-14 rounded-xl object-cover"
-              />
-              <div>
-                <h3 className="text-lg font-semibold text-slate-900">
-                  预约 {consultant.name}
-                </h3>
-                <p className="text-sm text-slate-500">{consultant.title}</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  姓名 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  placeholder="请输入姓名"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  手机号 <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  placeholder="请输入手机号"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  公司/门店名称
-                </label>
-                <input
-                  type="text"
-                  placeholder="请输入公司或门店名称"
-                  value={formData.company}
-                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    预约日期
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.date}
-                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
+            {submitted ? (
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Check className="w-8 h-8 text-green-600" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                    预约时间
-                  </label>
-                  <select
-                    value={formData.time}
-                    onChange={(e) => setFormData({ ...formData, time: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                <h3 className="text-xl font-bold text-slate-900 mb-2">预约成功！</h3>
+                <p className="text-slate-500 mb-2">{consultant.name} 将尽快与你联系</p>
+                <p className="text-sm text-slate-400 mb-6">可在商家后台「预约管理」和「沟通记录」中查看进度</p>
+                <div className="flex gap-3">
+                  <Link
+                    to="/dashboard/communications"
+                    className="flex-1 py-2.5 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors text-center"
                   >
-                    <option value="">选择时间</option>
-                    <option value="09:00">09:00</option>
-                    <option value="10:00">10:00</option>
-                    <option value="11:00">11:00</option>
-                    <option value="14:00">14:00</option>
-                    <option value="15:00">15:00</option>
-                    <option value="16:00">16:00</option>
-                  </select>
+                    查看沟通记录
+                  </Link>
+                  <button
+                    onClick={handleCloseModal}
+                    className="flex-1 py-2.5 border border-slate-200 text-slate-700 font-medium rounded-xl hover:bg-slate-50 transition-colors"
+                  >
+                    继续浏览
+                  </button>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">
-                  咨询内容
-                </label>
-                <textarea
-                  placeholder="请简要描述你的需求和问题"
-                  rows={3}
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
-                />
-              </div>
-              <button
-                onClick={handleSubmit}
-                className="w-full py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors"
-              >
-                提交预约
-              </button>
-            </div>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-6">
+                  <img
+                    src={consultant.avatar}
+                    alt={consultant.name}
+                    className="w-14 h-14 rounded-xl object-cover"
+                  />
+                  <div>
+                    <h3 className="text-lg font-semibold text-slate-900">
+                      预约 {consultant.name}
+                    </h3>
+                    <p className="text-sm text-slate-500">{consultant.title}</p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                      姓名 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="请输入姓名"
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                      手机号 <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="请输入手机号"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                      公司/门店名称
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="请输入公司或门店名称"
+                      value={formData.company}
+                      onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        预约日期
+                      </label>
+                      <input
+                        type="date"
+                        value={formData.date}
+                        onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                        预约时间
+                      </label>
+                      <select
+                        value={formData.time}
+                        onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                        className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      >
+                        <option value="">选择时间</option>
+                        <option value="09:00">09:00</option>
+                        <option value="10:00">10:00</option>
+                        <option value="11:00">11:00</option>
+                        <option value="14:00">14:00</option>
+                        <option value="15:00">15:00</option>
+                        <option value="16:00">16:00</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1.5">
+                      咨询内容
+                    </label>
+                    <textarea
+                      placeholder="请简要描述你的需求和问题"
+                      rows={3}
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
+                    />
+                  </div>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!formData.name || !formData.phone}
+                    className="w-full py-3 bg-blue-600 text-white font-medium rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    提交预约
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

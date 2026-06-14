@@ -121,8 +121,8 @@ export interface Appointment {
   userName: string;
   productId?: string;
   productName?: string;
-  consultantId: string;
-  consultantName: string;
+  consultantId?: string;
+  consultantName?: string;
   type: AppointmentType;
   date: string;
   time: string;

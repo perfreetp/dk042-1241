@@ -53,6 +53,14 @@ export default function ProductList() {
     setFilterOptions({ minRating });
   };
 
+  const handleAfterSaleScopeChange = (scope: string) => {
+    const current = filterOptions.afterSaleScope || [];
+    const newScopes = current.includes(scope)
+      ? current.filter((s) => s !== scope)
+      : [...current, scope];
+    setFilterOptions({ afterSaleScope: newScopes.length > 0 ? newScopes : undefined });
+  };
+
   const clearFilters = () => {
     setFilterOptions({
       industry: undefined,
@@ -60,6 +68,7 @@ export default function ProductList() {
       priceMax: undefined,
       minRating: undefined,
       features: undefined,
+      afterSaleScope: undefined,
       sortBy: undefined,
       search: undefined,
     });
@@ -197,6 +206,26 @@ export default function ProductList() {
               )}
             >
               {feature}
+            </button>
+          ))}
+        </div>
+      </FilterSection>
+
+      {/* 售后服务范围筛选 */}
+      <FilterSection title="售后服务范围">
+        <div className="flex flex-wrap gap-2">
+          {['上门服务', '在线客服', '实施顾问', '培训课程', '版本更新', '数据安全'].map((scope) => (
+            <button
+              key={scope}
+              onClick={() => handleAfterSaleScopeChange(scope)}
+              className={cn(
+                "px-3 py-1.5 text-xs rounded-full border transition-colors",
+                filterOptions.afterSaleScope?.includes(scope)
+                  ? "border-blue-500 bg-blue-50 text-blue-600"
+                  : "border-slate-200 hover:border-blue-500 hover:text-blue-600"
+              )}
+            >
+              {scope}
             </button>
           ))}
         </div>

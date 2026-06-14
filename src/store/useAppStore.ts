@@ -1,8 +1,50 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type {
-  Product, Industry, Favorite, Appointment, Communication, QuestionnaireResult, FilterOptions, DashboardStats, ProviderStats } from '@/types';
+  Product, Industry, Favorite, Appointment, Communication,
+  QuestionnaireResult, FilterOptions, DashboardStats, ProviderStats, Review, CaseStudy } from '@/types';
 import { products, consultants, providers } from '@/data/mockData';
+
+export interface UserReview {
+  id: string;
+  productId: string;
+  productName: string;
+  productLogo: string;
+  rating: number;
+  content: string;
+  tags: string[];
+  createdAt: string;
+  helpful: number;
+}
+
+export interface ProviderCase {
+  id: string;
+  title: string;
+  clientName: string;
+  industry: Industry;
+  description: string;
+  results: string[];
+  image: string;
+  createdAt: string;
+}
+
+export interface InquiryReply {
+  role: 'user' | 'me';
+  content: string;
+  time: string;
+}
+
+export interface ProviderInquiry {
+  id: string;
+  userName: string;
+  userPhone: string;
+  company: string;
+  product: string;
+  message: string;
+  time: string;
+  status: 'pending' | 'replied' | 'completed';
+  replies: InquiryReply[];
+}
 
 interface AppState {
   currentIndustry: Industry;
@@ -20,11 +62,23 @@ interface AppState {
   isInCompare: (productId: string) => boolean;
 
   appointments: Appointment[];
-  addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt'>) => void;
+  addAppointment: (appointment: Omit<Appointment, 'id' | 'createdAt'>) => string;
   updateAppointmentStatus: (id: string, status: Appointment['status']) => void;
 
   communications: Communication[];
   addCommunication: (communication: Omit<Communication, 'id' | 'createdAt'>) => void;
+
+  userReviews: UserReview[];
+  addUserReview: (review: Omit<UserReview, 'id' | 'createdAt' | 'helpful'>) => void;
+  updateUserReview: (id: string, updates: Partial<Pick<UserReview, 'rating' | 'content' | 'tags'>>) => void;
+
+  providerCases: ProviderCase[];
+  addProviderCase: (caseItem: Omit<ProviderCase, 'id' | 'createdAt'>) => void;
+  removeProviderCase: (id: string) => void;
+
+  providerInquiries: ProviderInquiry[];
+  addProviderInquiryReply: (inquiryId: string, content: string) => void;
+  addProviderInquiry: (inquiry: Omit<ProviderInquiry, 'id' | 'replies'>) => void;
 
   questionnaireResult: QuestionnaireResult | null;
   setQuestionnaireResult: (result: QuestionnaireResult) => void;
@@ -70,8 +124,8 @@ export const useAppStore = create<AppState>()(
         }),
       removeFavorite: (productId) =>
         set((state) => ({
-        favorites: state.favorites.filter((f) => f.productId !== productId),
-      })),
+          favorites: state.favorites.filter((f) => f.productId !== productId),
+        })),
       isFavorite: (productId) => get().favorites.some((f) => f.productId === productId),
 
       compareList: [],
@@ -118,17 +172,38 @@ export const useAppStore = create<AppState>()(
           createdAt: '2024-06-12',
         },
       ],
-      addAppointment: (appointment) =>
+      addAppointment: (appointment) => {
+        const newId = `apt-${Date.now()}`;
+        const now = new Date();
+        const dateStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
         set((state) => ({
           appointments: [
-            ...state.appointments,
             {
               ...appointment,
-              id: `apt-${Date.now()}`,
+              id: newId,
               createdAt: new Date().toISOString(),
             },
+            ...state.appointments,
           ],
-        })),
+        }));
+        if (appointment.type === 'consultation') {
+          set((state) => ({
+            communications: [
+              ...state.communications,
+              {
+                id: `comm-${Date.now()}`,
+                appointmentId: newId,
+                userId: 'user1',
+                consultantId: appointment.consultantId,
+                content: appointment.notes || '预约咨询',
+                type: 'note' as const,
+                createdAt: new Date().toISOString(),
+              },
+            ],
+          }));
+        }
+        return newId;
+      },
       updateAppointmentStatus: (id, status) =>
         set((state) => ({
           appointments: state.appointments.map((a) =>
@@ -165,6 +240,161 @@ export const useAppStore = create<AppState>()(
               id: `comm-${Date.now()}`,
               createdAt: new Date().toISOString(),
             },
+          ],
+        })),
+
+      userReviews: [
+        {
+          id: 'ur1',
+          productId: 'prod1',
+          productName: '美团收银专业版',
+          productLogo: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=meituan%20pos%20software%20logo&image_size=square',
+          rating: 5,
+          content: '用了半年了，系统很稳定，功能也很全面，特别是外卖对接功能太方便了。客服响应也很及时，有问题基本当天就能解决。',
+          tags: ['功能齐全', '服务好', '稳定'],
+          createdAt: '2024-03-15',
+          helpful: 23,
+        },
+        {
+          id: 'ur2',
+          productId: 'prod3',
+          productName: '客如云收银系统',
+          productLogo: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=keruyun%20pos%20logo%20orange&image_size=square',
+          rating: 4,
+          content: '性价比不错，基础功能都有，就是营销功能稍微弱了点。如果只是需要收银和库存管理的话完全够用。',
+          tags: ['性价比高', '功能待完善'],
+          createdAt: '2024-02-20',
+          helpful: 15,
+        },
+      ],
+      addUserReview: (review) =>
+        set((state) => ({
+          userReviews: [
+            {
+              ...review,
+              id: `ur-${Date.now()}`,
+              createdAt: new Date().toISOString().split('T')[0],
+              helpful: 0,
+            },
+            ...state.userReviews,
+          ],
+        })),
+      updateUserReview: (id, updates) =>
+        set((state) => ({
+          userReviews: state.userReviews.map((r) =>
+            r.id === id ? { ...r, ...updates } : r
+          ),
+        })),
+
+      providerCases: [],
+      addProviderCase: (caseItem) =>
+        set((state) => ({
+          providerCases: [
+            {
+              ...caseItem,
+              id: `pc-${Date.now()}`,
+              createdAt: new Date().toISOString().split('T')[0],
+            },
+            ...state.providerCases,
+          ],
+        })),
+      removeProviderCase: (id) =>
+        set((state) => ({
+          providerCases: state.providerCases.filter((c) => c.id !== id),
+        })),
+
+      providerInquiries: [
+        {
+          id: 'pi1',
+          userName: '李老板',
+          userPhone: '138****8888',
+          company: '美味餐饮店',
+          product: '美团收银专业版',
+          message: '想了解连锁门店的价格方案，我们有5家店',
+          time: '10分钟前',
+          status: 'pending',
+          replies: [
+            { role: 'user' as const, content: '想了解连锁门店的价格方案', time: '10:30' },
+          ],
+        },
+        {
+          id: 'pi2',
+          userName: '王经理',
+          userPhone: '139****6666',
+          company: 'XX餐饮连锁',
+          product: '美团餐饮供应链',
+          message: '请问支持多少家门店的库存管理？',
+          time: '1小时前',
+          status: 'pending',
+          replies: [
+            { role: 'user' as const, content: '请问支持多少家门店的库存管理？', time: '09:45' },
+          ],
+        },
+        {
+          id: 'pi3',
+          userName: '张总',
+          userPhone: '137****9999',
+          company: '张总餐饮集团',
+          product: '美团收银专业版',
+          message: '已经收到报价，考虑中',
+          time: '昨天',
+          status: 'replied',
+          replies: [
+            { role: 'user' as const, content: '报价单能再优惠点吗？', time: '昨天 14:30' },
+            { role: 'me' as const, content: '您好，已经是最优惠价格了，我们还提供免费培训服务', time: '昨天 15:00' },
+            { role: 'user' as const, content: '好的，我再考虑考虑', time: '昨天 15:30' },
+          ],
+        },
+        {
+          id: 'pi4',
+          userName: '陈店长',
+          userPhone: '136****5555',
+          company: '陈记火锅',
+          product: '美团收银专业版',
+          message: '准备采购，约个时间上门演示',
+          time: '2天前',
+          status: 'completed',
+          replies: [
+            { role: 'user' as const, content: '准备采购，约个时间上门演示', time: '前天 10:00' },
+            { role: 'me' as const, content: '好的，明天下午2点可以吗？', time: '前天 10:30' },
+            { role: 'user' as const, content: '可以的，地址是...', time: '前天 11:00' },
+          ],
+        },
+      ],
+      addProviderInquiryReply: (inquiryId, content) =>
+        set((state) => ({
+          providerInquiries: state.providerInquiries.map((inq) =>
+            inq.id === inquiryId
+              ? {
+                  ...inq,
+                  status: 'replied' as const,
+                  replies: [
+                    ...inq.replies,
+                    {
+                      role: 'me' as const,
+                      content,
+                      time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+                    },
+                  ],
+                }
+              : inq
+          ),
+        })),
+      addProviderInquiry: (inquiry) =>
+        set((state) => ({
+          providerInquiries: [
+            {
+              ...inquiry,
+              id: `pi-${Date.now()}`,
+              replies: [
+                {
+                  role: 'user' as const,
+                  content: inquiry.message,
+                  time: new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+                },
+              ],
+            },
+            ...state.providerInquiries,
           ],
         })),
 
@@ -216,6 +446,14 @@ export const useAppStore = create<AppState>()(
           );
         }
 
+        if (filterOptions.afterSaleScope && filterOptions.afterSaleScope.length > 0) {
+          result = result.filter((p) =>
+            filterOptions.afterSaleScope!.every((scope) =>
+              p.afterSaleScope.some((as) => as.includes(scope))
+            )
+          );
+        }
+
         if (filterOptions.search) {
           const search = filterOptions.search.toLowerCase();
           result = result.filter(
@@ -247,23 +485,24 @@ export const useAppStore = create<AppState>()(
       },
 
       getDashboardStats: () => {
-        const { favorites, appointments } = get();
+        const { favorites, appointments, userReviews } = get();
         return {
           totalFavorites: favorites.length,
           totalAppointments: appointments.length,
           pendingAppointments: appointments.filter((a) => a.status === 'pending').length,
           completedAppointments: appointments.filter((a) => a.status === 'completed').length,
-          totalReviews: 0,
+          totalReviews: userReviews.length,
         };
       },
 
       getProviderStats: () => {
+        const { providerCases, providerInquiries } = get();
         const providerProducts = products.filter((p) => p.providerId === 'p1');
         return {
           totalProducts: providerProducts.length,
-          totalInquiries: 45,
-          pendingInquiries: 12,
-          totalCases: 8,
+          totalInquiries: providerInquiries.length,
+          pendingInquiries: providerInquiries.filter((i) => i.status === 'pending').length,
+          totalCases: providerCases.length + (products.find((p) => p.id === 'prod1')?.cases.length || 0),
           avgRating: 4.7,
           totalViews: 2340,
         };
@@ -285,6 +524,9 @@ export const useAppStore = create<AppState>()(
         userRole: state.userRole,
         isLoggedIn: state.isLoggedIn,
         currentIndustry: state.currentIndustry,
+        userReviews: state.userReviews,
+        providerCases: state.providerCases,
+        providerInquiries: state.providerInquiries,
       }),
     }
   )

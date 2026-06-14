@@ -1,48 +1,60 @@
 import { useState } from 'react';
-import { Star, ThumbsUp, Edit, Plus } from 'lucide-react';
+import { Star, ThumbsUp, Edit, Plus, X, Check } from 'lucide-react';
 import { useAppStore } from '@/store/useAppStore';
 import { cn } from '@/lib/utils';
+import { products } from '@/data/mockData';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 
-const myReviews = [
-  {
-    id: 'r1',
-    productId: 'prod1',
-    productName: '美团收银专业版',
-    productLogo: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=meituan%20pos%20software%20logo&image_size=square',
-    rating: 5,
-    content: '用了半年了，系统很稳定，功能也很全面，特别是外卖对接功能太方便了。客服响应也很及时，有问题基本当天就能解决。',
-    tags: ['功能齐全', '服务好', '稳定'],
-    createdAt: '2024-03-15',
-    helpful: 23,
-  },
-  {
-    id: 'r2',
-    productId: 'prod3',
-    productName: '客如云收银系统',
-    productLogo: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=keruyun%20pos%20logo%20orange&image_size=square',
-    rating: 4,
-    content: '性价比不错，基础功能都有，就是营销功能稍微弱了点。如果只是需要收银和库存管理的话完全够用。',
-    tags: ['性价比高', '功能待完善'],
-    createdAt: '2024-02-20',
-    helpful: 15,
-  },
-];
-
 export default function DashboardReviews() {
+  const { userReviews, addUserReview, updateUserReview } = useAppStore();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editRating, setEditRating] = useState(5);
   const [editContent, setEditContent] = useState('');
+  const [editTags, setEditTags] = useState<string[]>([]);
+  const [showNewReview, setShowNewReview] = useState(false);
+  const [newReview, setNewReview] = useState({
+    productId: '',
+    rating: 5,
+    content: '',
+    tags: [] as string[],
+  });
 
-  const handleEdit = (review: typeof myReviews[0]) => {
+  const handleEdit = (review: typeof userReviews[0]) => {
     setEditingId(review.id);
     setEditRating(review.rating);
     setEditContent(review.content);
+    setEditTags(review.tags);
   };
 
-  const handleSave = () => {
+  const handleSave = (id: string) => {
+    updateUserReview(id, { rating: editRating, content: editContent, tags: editTags });
     setEditingId(null);
-    alert('评价已更新');
+  };
+
+  const handleNewReviewSubmit = () => {
+    if (!newReview.productId || !newReview.content.trim()) return;
+    const product = products.find((p) => p.id === newReview.productId);
+    if (!product) return;
+    addUserReview({
+      productId: product.id,
+      productName: product.name,
+      productLogo: product.logo,
+      rating: newReview.rating,
+      content: newReview.content,
+      tags: newReview.tags,
+    });
+    setNewReview({ productId: '', rating: 5, content: '', tags: [] });
+    setShowNewReview(false);
+  };
+
+  const commonTags = ['功能齐全', '服务好', '性价比高', '稳定', '易上手', '功能待完善', '响应慢', '价格偏高'];
+
+  const toggleTag = (tag: string, currentTags: string[], setTags: (t: string[]) => void) => {
+    if (currentTags.includes(tag)) {
+      setTags(currentTags.filter((t) => t !== tag));
+    } else {
+      setTags([...currentTags, tag]);
+    }
   };
 
   return (
@@ -51,16 +63,114 @@ export default function DashboardReviews() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">我的评价</h1>
-            <p className="text-slate-500 mt-1">你已发布 {myReviews.length} 条评价</p>
+            <p className="text-slate-500 mt-1">你已发布 {userReviews.length} 条评价</p>
           </div>
-          <button className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+          <button
+            onClick={() => setShowNewReview(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+          >
             <Plus className="w-4 h-4" />
             写评价
           </button>
         </div>
 
+        {showNewReview && (
+          <div className="bg-white rounded-xl border border-blue-200 p-5 mb-4">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-slate-900">新增评价</h3>
+              <button
+                onClick={() => setShowNewReview(false)}
+                className="p-1 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">选择产品</label>
+                <select
+                  value={newReview.productId}
+                  onChange={(e) => setNewReview({ ...newReview, productId: e.target.value })}
+                  className="w-full px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                >
+                  <option value="">请选择产品</option>
+                  {products.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <span className="block text-sm font-medium text-slate-700 mb-1.5">评分</span>
+                <div className="flex items-center gap-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <button
+                      key={i}
+                      onClick={() => setNewReview({ ...newReview, rating: i })}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={cn(
+                          "w-6 h-6 transition-colors",
+                          i <= newReview.rating
+                            ? "text-amber-400 fill-amber-400"
+                            : "text-slate-200 hover:text-amber-300"
+                        )}
+                      />
+                    </button>
+                  ))}
+                  <span className="text-sm text-slate-500 ml-2">{newReview.rating}.0 分</span>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">评价内容</label>
+                <textarea
+                  value={newReview.content}
+                  onChange={(e) => setNewReview({ ...newReview, content: e.target.value })}
+                  rows={4}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
+                  placeholder="说说你的使用感受..."
+                />
+              </div>
+              <div>
+                <span className="block text-sm font-medium text-slate-700 mb-1.5">标签</span>
+                <div className="flex flex-wrap gap-2">
+                  {commonTags.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => toggleTag(tag, newReview.tags, (t) => setNewReview({ ...newReview, tags: t }))}
+                      className={cn(
+                        "px-3 py-1.5 text-xs rounded-full border transition-colors",
+                        newReview.tags.includes(tag)
+                          ? "border-blue-500 bg-blue-50 text-blue-600"
+                          : "border-slate-200 hover:border-blue-500 hover:text-blue-600"
+                      )}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleNewReviewSubmit}
+                  disabled={!newReview.productId || !newReview.content.trim()}
+                  className="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  发布评价
+                </button>
+                <button
+                  onClick={() => setShowNewReview(false)}
+                  className="px-4 py-2 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-100 transition-colors"
+                >
+                  取消
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4">
-          {myReviews.map((review) => (
+          {userReviews.map((review) => (
             <div
               key={review.id}
               className="bg-white rounded-xl border border-slate-200 p-5"
@@ -130,9 +240,28 @@ export default function DashboardReviews() {
                         className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 resize-none"
                         placeholder="说说你的使用感受..."
                       />
+                      <div>
+                        <span className="block text-sm text-slate-500 mb-1.5">标签</span>
+                        <div className="flex flex-wrap gap-2">
+                          {commonTags.map((tag) => (
+                            <button
+                              key={tag}
+                              onClick={() => toggleTag(tag, editTags, setEditTags)}
+                              className={cn(
+                                "px-3 py-1.5 text-xs rounded-full border transition-colors",
+                                editTags.includes(tag)
+                                  ? "border-blue-500 bg-blue-50 text-blue-600"
+                                  : "border-slate-200 hover:border-blue-500 hover:text-blue-600"
+                              )}
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                       <div className="flex gap-2">
                         <button
-                          onClick={handleSave}
+                          onClick={() => handleSave(review.id)}
                           className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
                         >
                           保存
@@ -178,7 +307,7 @@ export default function DashboardReviews() {
           ))}
         </div>
 
-        {myReviews.length === 0 && (
+        {userReviews.length === 0 && !showNewReview && (
           <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
             <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Star className="w-10 h-10 text-slate-300" />
@@ -189,6 +318,13 @@ export default function DashboardReviews() {
             <p className="text-slate-500 mb-6">
               分享你的使用体验，帮助更多商家做选择
             </p>
+            <button
+              onClick={() => setShowNewReview(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              写评价
+            </button>
           </div>
         )}
       </div>
